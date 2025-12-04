@@ -59538,8 +59538,9 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.$Refresh$.runtime = __webpack_require__(/*! ./node_modules/react-refresh/runtime.js */ "./node_modules/react-refresh/runtime.js");
 
 
-const BACKEND_URL = "https://b064e612-107b-480a-8dd4-338839c84de1.preview.emergentagent.com";
+const BACKEND_URL = "http://localhost:3000"; // o 5000, 8080, ecc.
 const API_BASE = `${BACKEND_URL}/api`;
+
 
 // Create axios instance with interceptors
 const api = axios__WEBPACK_IMPORTED_MODULE_0__["default"].create({
