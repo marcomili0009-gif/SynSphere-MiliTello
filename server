@@ -1,0 +1,167 @@
+// Importa i pacchetti necessari
+require('dotenv').config(); // Per gestire le variabili d'ambiente (es. chiavi segrete)
+const express = require('express');
+const cors = require('cors');
+const { MongoClient, ObjectId } = require('mongodb');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// --- Configurazione Iniziale ---
+const app = express();
+const PORT = process.env.PORT || 3000; // Il server ascolterà sulla porta 3000
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wms';
+const JWT_SECRET = process.env.JWT_SECRET || 'la-tua-chiave-segreta-deve-essere-cambiata';
+
+let db; // Variabile per mantenere la connessione al database
+
+// --- Middleware ---
+app.use(cors()); // Abilita le richieste da origini diverse (il tuo frontend)
+app.use(express.json()); // Permette al server di leggere i dati JSON inviati nelle richieste
+
+// --- Connessione al Database ---
+async function connectDB() {
+  try {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    db = client.db(); // Seleziona il database (es. 'wms')
+    console.log('✓ Connessione a MongoDB stabilita con successo.');
+  } catch (error) {
+    console.error('✗ Impossibile connettersi a MongoDB:', error);
+    process.exit(1); // Esce se non riesce a connettersi al DB
+  }
+}
+
+// --- Endpoint di Autenticazione ---
+
+/**
+ * POST /api/auth/register
+ * Registra un nuovo utente nel sistema.
+ * Il primo utente registrato diventa automaticamente 'admin'.
+ */
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, nomecompleto } = req.body;
+
+    // 1. Validazione dell'input
+    if (!username || !password || !nomecompleto) {
+      return res.status(400).json({ detail: 'Tutti i campi (username, password, nomecompleto) sono obbligatori.' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ detail: 'La password deve contenere almeno 6 caratteri.' });
+    }
+
+    // 2. Controlla se l'utente esiste già
+    const existingUser = await db.collection('utenti').findOne({ username: username.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ detail: 'Questo nome utente è già in uso.' });
+    }
+
+    // 3. Determina il ruolo (il primo utente è admin)
+    const userCount = await db.collection('utenti').countDocuments();
+    const ruolo = userCount === 0 ? 'admin' : 'operatore';
+
+    // 4. Hash della password per sicurezza
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 5. Crea il nuovo oggetto utente
+    const newUser = {
+      username: username.toLowerCase(),
+      password: hashedPassword,
+      nomecompleto,
+      ruolo,
+      attivo: true,
+      datacreazione: new Date(),
+    };
+
+    // 6. Salva l'utente nel database
+    const result = await db.collection('utenti').insertOne(newUser);
+
+    // 7. Crea un token di accesso (JWT)
+    const token = jwt.sign(
+      { userId: result.insertedId.toString(), username: newUser.username, ruolo: newUser.ruolo },
+      JWT_SECRET,
+      { expiresIn: '7d' } // Il token scade dopo 7 giorni
+    );
+
+    // 8. Rimuovi la password prima di inviare i dati dell'utente
+    delete newUser.password;
+
+    // 9. Invia la risposta con il token e i dati dell'utente
+    res.status(201).json({
+      access_token: token,
+      user: {
+        id: result.insertedId.toString(),
+        ...newUser
+      }
+    });
+
+  } catch (error) {
+    console.error('Errore durante la registrazione:', error);
+    res.status(500).json({ detail: 'Si è verificato un errore interno del server.' });
+  }
+});
+
+/**
+ * POST /api/auth/login
+ * Esegue l'accesso di un utente esistente.
+ */
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // 1. Validazione
+        if (!username || !password) {
+            return res.status(400).json({ detail: 'Username e password sono richiesti.' });
+        }
+
+        // 2. Trova l'utente
+        const user = await db.collection('utenti').findOne({ username: username.toLowerCase() });
+        if (!user) {
+            return res.status(401).json({ detail: 'Credenziali non valide.' });
+        }
+
+        // 3. Verifica la password
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) {
+            return res.status(401).json({ detail: 'Credenziali non valide.' });
+        }
+        
+        // 4. Controlla se l'utente è attivo
+        if (!user.attivo) {
+            return res.status(403).json({ detail: 'Utente non attivo.' });
+        }
+
+        // 5. Crea e invia il token
+        const token = jwt.sign(
+            { userId: user._id.toString(), username: user.username, ruolo: user.ruolo },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+        
+        delete user.password;
+
+        res.json({
+            access_token: token,
+            user: {
+                id: user._id.toString(),
+                ...user
+            }
+        });
+
+    } catch (error) {
+        console.error('Errore durante il login:', error);
+        res.status(500).json({ detail: 'Si è verificato un errore interno del server.' });
+    }
+});
+
+
+// --- Avvio del Server ---
+async function startServer() {
+  await connectDB(); // Prima connettiti al DB
+  app.listen(PORT, () => {
+    console.log(`✓ Server avviato e in ascolto sulla porta ${PORT}`);
+    console.log(`   URL: http://localhost:${PORT}`);
+  });
+}
+
+startServer(); // Avvia tutto
