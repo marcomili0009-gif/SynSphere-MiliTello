@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Hub | Ghost Close & Password v26</title>
+    <title>Kitchen Hub | v27 Full Working</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
         /* =========================================
-           CORE STYLES (INVARIATI)
+           CORE STYLES
            ========================================= */
         :root {
             --bg-dark: #020205;
@@ -96,7 +96,7 @@
         @keyframes pulseDot { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         /* =========================================
-           APP VIEW - FULLSCREEN & GHOST CLOSE
+           APP VIEW - FULLSCREEN
            ========================================= */
         #hub-app-view {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -105,13 +105,13 @@
         #hub-app-view.active { display: flex; animation: zoomIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* ZONA SENSIBILE PER MOSTRARE LA X */
+        /* ZONA TRIGGER X FANTASMA */
         .close-trigger-zone {
             position: absolute; top: 0; left: 0; width: 150px; height: 150px;
-            z-index: 10001; /* Sopra iframe */
+            z-index: 10001; 
         }
-        
-        /* PULSANTE X - INIZIALMENTE NASCOSTO */
+
+        /* X BUTTON STYLING */
         .close-app-btn {
             position: absolute; top: 25px; left: 25px;
             width: 50px; height: 50px; border-radius: 50%;
@@ -121,10 +121,9 @@
             font-size: 1.5rem; cursor: pointer; z-index: 10002;
             transition: all 0.4s ease;
             backdrop-filter: blur(12px);
-            opacity: 0; transform: translateY(-20px); pointer-events: none; /* Non cliccabile se nascosto */
+            opacity: 0; transform: translateY(-20px); pointer-events: none;
         }
 
-        /* MOSTRA X QUANDO MOUSE SU ZONA O SU BOTTONE STESSO */
         .close-trigger-zone:hover ~ .close-app-btn,
         .close-app-btn:hover {
             opacity: 1; transform: translateY(0); pointer-events: auto;
@@ -190,7 +189,7 @@
 
     <!-- FULLSCREEN APP CONTAINER -->
     <section id="hub-app-view">
-        <div class="close-trigger-zone"></div> <!-- Zona sensibile per far apparire la X -->
+        <div class="close-trigger-zone"></div>
         <div class="close-app-btn" onclick="attemptClose()">✕</div>
         <iframe id="hub-iframe"></iframe>
     </section>
@@ -209,12 +208,7 @@
         <div class="system-status"><div class="status-pill"><div class="status-dot"></div> System Online</div></div>
     </footer>
 
-    <!-- 
-    ================================================================
-    ZONA INCOLLAGGIO CODICI
-    ================================================================
-    -->
-
+    <!-- INCOLLA I TUOI CODICI QUI -->
         <template id="app-a">
       
 <!DOCTYPE html>
@@ -5662,10 +5656,7 @@ body {
     </template>
 
     <script>
-        // ... (CODICE PARTICELLE, METEO, PLAYER - TUTTO INVARIATO) ...
-        // INSERISCI QUI IL CODICE JS STANDARD DELLE VERSIONI PRECEDENTI PER BACKGROUND E PLAYER
-
-        // ... (CODICE JS HUB UNIFICATO) ...
+        // === PARTICELLE E SFONDO ===
         const canvas = document.getElementById('living-bg'); const ctx = canvas.getContext('2d'); let width, height; let particles = []; const mouse = { x: -1000, y: -1000 };
         function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; } window.addEventListener('resize', resize); resize();
         class Particle { constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.baseX = this.x; this.baseY = this.y; this.size = Math.random() * 2 + 0.5; this.color = `rgba(${100 + Math.random()*155}, ${200 + Math.random()*55}, 255, ${Math.random()*0.3 + 0.1})`; this.angle = Math.random() * Math.PI * 2; this.speed = Math.random() * 0.3 + 0.1; } update(time) { this.x += Math.cos(this.angle + time * 0.001) * this.speed; this.y += Math.sin(this.angle + time * 0.001) * this.speed; const dx = mouse.x - this.x; const dy = mouse.y - this.y; const distance = Math.sqrt(dx * dx + dy * dy); if (distance < 250) { const force = (250 - distance) / 250; this.x += (dx / distance) * force * -4; this.y += (dy / distance) * force * -4; } if (this.x < 0) this.x = width; if (this.x > width) this.x = 0; if (this.y < 0) this.y = height; if (this.y > height) this.y = 0; } draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); } }
@@ -5674,6 +5665,45 @@ body {
         
         function applyTiltLogic() { document.querySelectorAll('.hub-tile').forEach(card => { card.addEventListener('mousemove', (e) => { const rect = card.getBoundingClientRect(); const centerX = rect.width / 2; const centerY = rect.height / 2; const rotateX = ((e.clientY - rect.top - centerY) / 20) * -1; const rotateY = (e.clientX - rect.left - centerX) / 20; card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`; }); card.addEventListener('mouseenter', () => { const color = card.style.getPropertyValue('--neon-color'); if(color) { document.documentElement.style.setProperty('--active-color', color); document.documentElement.style.setProperty('--spot-size', '600px'); } }); card.addEventListener('mouseleave', () => { card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale(1)`; document.documentElement.style.setProperty('--active-color', 'rgba(255,255,255,0.2)'); document.documentElement.style.setProperty('--spot-size', '400px'); }); }); }
         function updateClock() { const now = new Date(); document.getElementById('clock').innerText = now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'}); document.getElementById('date').innerText = now.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'}).toUpperCase(); } setInterval(updateClock, 1000); updateClock();
+
+        // === METEO COMPLETO ===
+        const wTemp = document.getElementById('w-temp'); const wLoc = document.getElementById('w-loc'); const wIcon = document.getElementById('w-icon'); const hourlyDiv = document.getElementById('hourly-forecast'); const dailyDiv = document.getElementById('daily-forecast');
+        function getWeatherEmoji(code) { if (code === 0) return "☀️"; if (code >= 1 && code <= 3) return "⛅"; if (code >= 45 && code <= 48) return "🌫️"; if (code >= 51 && code <= 67) return "🌧️"; if (code >= 71) return "❄️"; if (code >= 95) return "⛈️"; return "🌤️"; }
+        async function initWeather() { 
+            let lat = 45.46, lon = 9.19, city = "Milano (Default)"; wLoc.innerText = "Rilevamento..."; 
+            try { const ipRes = await fetch('https://ipapi.co/json/'); if(!ipRes.ok) throw new Error("IP blocked"); const ipData = await ipRes.json(); lat = ipData.latitude; lon = ipData.longitude; city = ipData.city; } catch (e) {} 
+            wLoc.innerText = city; 
+            try { 
+                const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`); const data = await wRes.json(); 
+                wTemp.innerText = Math.round(data.current_weather.temperature) + "°C"; wIcon.innerText = getWeatherEmoji(data.current_weather.weathercode); 
+                hourlyDiv.innerHTML = ""; const currentHour = new Date().getHours(); let countH = 0; for(let i=0; i<data.hourly.time.length; i++) { const h = new Date(data.hourly.time[i]).getHours(); if(h > currentHour && countH < 4) { hourlyDiv.innerHTML += `<div class="forecast-row"><span>${h}:00</span><span>${getWeatherEmoji(data.hourly.weathercode[i])} ${Math.round(data.hourly.temperature_2m[i])}°</span></div>`; countH++; } } 
+                dailyDiv.innerHTML = ""; for(let i=1; i<=3; i++) { const date = new Date(data.daily.time[i]); dailyDiv.innerHTML += `<div class="forecast-row"><span>${date.toLocaleDateString('it-IT', {weekday:'short'}).toUpperCase()}</span><span>${Math.round(data.daily.temperature_2m_min[i])}° / ${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`; } 
+            } catch(e) { wLoc.innerText = "Meteo Offline"; } 
+        }
+
+        // === PLAYER YOUTUBE COMPLETO ===
+        const musicWrapper = document.getElementById('music-wrapper'); const inputGroup = document.getElementById('input-group'); const ytLink = document.getElementById('yt-link'); const ytFrame = document.getElementById('yt-frame'); const musicTitle = document.getElementById('music-title'); const musicAuthor = document.getElementById('music-author');
+        const APIKEY = 'AIzaSyDji6gfiKUEIPuWpkwAyBkfkdT5IQNA8'; let currentId = "jfKfPfyJRdk"; 
+
+        function initializePlayer() { musicTitle.innerText = "Lofi Girl Radio"; musicAuthor.innerText = "24/7 lofi hip hop beats"; updatePlayerUI(currentId, false); }
+        function toggleMusicInput() { musicWrapper.classList.add('locked'); inputGroup.classList.add('active'); ytLink.focus(); }
+        function closeMusicInput() { musicWrapper.classList.remove('locked'); inputGroup.classList.remove('active'); }
+
+        async function processYouTubeLink() {
+            const val = ytLink.value.trim(); if(!val) { closeMusicInput(); return; }
+            const listMatch = val.match(/[?&]list=([^&]+)/); const vidMatch = val.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            let id = "", isPlaylist = false;
+            if (listMatch) { id = listMatch[1]; isPlaylist = true; } else if (vidMatch) { id = vidMatch[1]; isPlaylist = false; } else if (val.length === 11) { id = val; isPlaylist = false; } else { alert("Link non valido"); return; }
+            musicTitle.innerText = "Caricamento..."; musicAuthor.innerText = "";
+            try {
+                let apiUrl = isPlaylist ? `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${id}&key=${APIKEY}` : `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${APIKEY}`;
+                const res = await fetch(apiUrl); if(!res.ok) throw new Error("Error"); const data = await res.json();
+                if (data.items && data.items.length > 0) { const snippet = data.items[0].snippet; musicTitle.innerText = snippet.title.substring(0, 35) + "..."; musicAuthor.innerText = snippet.channelTitle; updatePlayerUI(id, isPlaylist); } else { throw new Error("No data"); }
+            } catch (e) { musicTitle.innerText = "YouTube Music"; musicAuthor.innerText = "Video Caricato"; updatePlayerUI(id, isPlaylist); }
+            closeMusicInput(); ytLink.value = "";
+        }
+        function updatePlayerUI(id, isPlaylist) { let src = isPlaylist ? `https://www.youtube.com/embed/videoseries?list=${id}&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&autoplay=1` : `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`; ytFrame.src = ""; setTimeout(() => { ytFrame.src = src; }, 100); }
+        ytLink.addEventListener('keypress', function(e) { if (e.key === 'Enter') processYouTubeLink(); });
 
         const APP_REGISTRY = [
             { id: 'app-a', label: 'Gestione<br>Sala', subtitle: 'Tavoli e comande', iconColor: '#54a0ff', iconSvg: `<svg viewBox="0 0 240 160"><g transform="translate(-14, -10) scale(1.12)" class="neon-icon-glow"><rect x="80" y="62" width="80" height="8" rx="4" fill="#aaddff" /><line x1="120" y1="70" x2="120" y2="115" stroke="white" stroke-width="5" /><path d="M95 125 Q120 105 145 125" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/><g transform="translate(60, 60)"><path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" transform="rotate(-12)"/><rect x="10" y="36" width="32" height="8" rx="3" fill="white" /><line x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" transform="rotate(8 15 44)"/><line x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" transform="rotate(4 35 44)"/></g><g transform="translate(180, 60) scale(-1, 1)"><path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" transform="rotate(-12)"/><rect x="10" y="36" width="32" height="8" rx="3" fill="white" /><line x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" transform="rotate(8 15 44)"/><line x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" transform="rotate(4 35 44)"/></g><g class="place-setting-plate"><ellipse cx="95" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/><ellipse cx="145" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/></g><g class="hologram-anchor" transform="translate(120, 62)"><g class="hologram-anim-layer"><path class="hologram-beam" d="M0 0 L-20 -45 L20 -45 Z" /><rect x="-25" y="-45" width="50" height="18" rx="4" class="hologram-border" fill="rgba(0,0,0,0.8)" /><text x="0" y="-32" text-anchor="middle" class="hologram-text">NOVITÀ</text></g></g></g></svg>` },
@@ -5691,12 +5721,8 @@ body {
             applyTiltLogic();
         }
 
-        // PLAYER LOGIC (OMESSA PER BREVITÀ - COPIA DAL PRECEDENTE)
-
-        // VAR GLOBALE PER TRACCIARE L'APP APERTA
         let currentAppId = null;
 
-        /* FULLSCREEN APP NAV LOGIC */
         function openApp(appId) {
             currentAppId = appId;
             const template = document.getElementById(appId); if (!template) return;
@@ -5707,9 +5733,8 @@ body {
             iframe.srcdoc = template.innerHTML;
         }
 
-        /* LOGICA DI CHIUSURA CON PASSWORD PER IL TOTEM */
         function attemptClose() {
-            if (currentAppId === 'app-b') { // Se è il TOTEM SELF
+            if (currentAppId === 'app-b') { // TOTEM SELF
                 const pass = prompt("Inserisci PIN Amministratore per uscire:");
                 if (pass === "0000") {
                     closeApp();
@@ -5717,7 +5742,6 @@ body {
                     if (pass !== null) alert("PIN Errato!");
                 }
             } else {
-                // Per le altre app, chiudi direttamente
                 closeApp();
             }
         }
@@ -5726,12 +5750,15 @@ body {
             const appView = document.getElementById('hub-app-view');
             const iframe = document.getElementById('hub-iframe');
             currentAppId = null;
-            
             appView.classList.remove('active');
             setTimeout(() => { iframe.srcdoc = ""; }, 300);
         }
 
-        document.addEventListener('DOMContentLoaded', () => { renderHomeTiles(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            renderHomeTiles(); 
+            initWeather(); 
+            initializePlayer(); 
+        });
     </script>
 </body>
 </html>
