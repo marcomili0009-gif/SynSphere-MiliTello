@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Hub | Precise Weather v20</title>
+    <title>Kitchen Hub | Precision GPS v21</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
@@ -299,7 +299,7 @@
                 <div style="font-size: 1.5rem" id="w-icon">🌍</div>
                 <div style="display:flex; flex-direction:column; line-height:1.2">
                     <span style="font-weight:700" id="w-temp">--°C</span>
-                    <span style="font-size:0.8rem; color:#aaa" id="w-loc">Milano</span>
+                    <span style="font-size:0.8rem; color:#aaa" id="w-loc">Rilevamento...</span>
                 </div>
             </div>
             <div class="weather-forecast">
@@ -469,7 +469,7 @@
         setInterval(updateClock, 1000); updateClock();
 
         // ===========================================
-        // LOGICA METEO API (DAL FILE ALLEGATO)
+        // LOGICA METEO PRECISE (GPS FIRST -> IP FALLBACK)
         // ===========================================
         const wTemp = document.getElementById('w-temp');
         const wLoc = document.getElementById('w-loc');
@@ -484,38 +484,77 @@
         }
 
         async function initWeather() {
-            try {
-                let lat, lon, city;
+            // Helper function to update UI with weather data
+            async function fetchWeatherData(lat, lon, city) {
+                 wLoc.innerText = city;
+                 try {
+                     const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
+                     const data = await wRes.json();
+                     
+                     wTemp.innerText = Math.round(data.current_weather.temperature) + "°C";
+                     wIcon.innerText = getWeatherEmoji(data.current_weather.weathercode);
+
+                     // Hourly
+                     hourlyDiv.innerHTML = "";
+                     const currentHour = new Date().getHours();
+                     let countH = 0;
+                     for(let i=0; i<data.hourly.time.length; i++) {
+                        const h = new Date(data.hourly.time[i]).getHours();
+                        if(h > currentHour && countH < 4) {
+                            hourlyDiv.innerHTML += `<div class="forecast-row"><span>${h}:00</span><span>${getWeatherEmoji(data.hourly.weathercode[i])} ${Math.round(data.hourly.temperature_2m[i])}°</span></div>`;
+                            countH++;
+                        }
+                     }
+
+                     // Daily
+                     dailyDiv.innerHTML = "";
+                     for(let i=1; i<=3; i++) {
+                        const date = new Date(data.daily.time[i]);
+                        dailyDiv.innerHTML += `<div class="forecast-row"><span>${date.toLocaleDateString('it-IT', {weekday:'short'}).toUpperCase()}</span><span>${Math.round(data.daily.temperature_2m_min[i])}° / ${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
+                     }
+                 } catch(e) {
+                     console.error("Meteo Error:", e);
+                     wLoc.innerText = "Errore Meteo";
+                 }
+            }
+
+            // 1. GPS PRECISE STRATEGY
+            if (navigator.geolocation) {
+                wLoc.innerText = "Ricerca GPS...";
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        // Reverse Geocode for City Name (Free API)
+                        let cityName = "Posizione GPS";
+                        try {
+                            const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=it`);
+                            const geoData = await geoRes.json();
+                            cityName = geoData.city || geoData.locality || "Posizione Rilevata";
+                        } catch(e) {}
+                        fetchWeatherData(lat, lon, cityName);
+                    },
+                    (error) => {
+                        // 2. FALLBACK TO IP IF GPS DENIED/ERROR
+                        console.warn("GPS denied/unavailable, falling back to IP...");
+                        fallbackIpLocation();
+                    }
+                );
+            } else {
+                fallbackIpLocation();
+            }
+
+            async function fallbackIpLocation() {
+                wLoc.innerText = "Ricerca IP...";
                 try {
                     const ipRes = await fetch('https://ipapi.co/json/');
                     const ipData = await ipRes.json();
-                    lat = ipData.latitude; lon = ipData.longitude; city = ipData.city;
-                } catch { lat = 45.46; lon = 9.19; city = "Milano (Default)"; } // Fallback identico al file
-
-                wLoc.innerText = city;
-                const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
-                const data = await wRes.json();
-
-                wTemp.innerText = Math.round(data.current_weather.temperature) + "°C";
-                wIcon.innerText = getWeatherEmoji(data.current_weather.weathercode);
-
-                hourlyDiv.innerHTML = "";
-                const currentHour = new Date().getHours();
-                let countH = 0;
-                for(let i=0; i<data.hourly.time.length; i++) {
-                    const h = new Date(data.hourly.time[i]).getHours();
-                    if(h > currentHour && countH < 4) {
-                        hourlyDiv.innerHTML += `<div class="forecast-row"><span>${h}:00</span><span>${getWeatherEmoji(data.hourly.weathercode[i])} ${Math.round(data.hourly.temperature_2m[i])}°</span></div>`;
-                        countH++;
-                    }
+                    fetchWeatherData(ipData.latitude, ipData.longitude, ipData.city);
+                } catch {
+                    // 3. FINAL FALLBACK DEFAULT
+                    fetchWeatherData(45.46, 9.19, "Milano (Default)");
                 }
-
-                dailyDiv.innerHTML = "";
-                for(let i=1; i<=3; i++) {
-                    const date = new Date(data.daily.time[i]);
-                    dailyDiv.innerHTML += `<div class="forecast-row"><span>${date.toLocaleDateString('it-IT', {weekday:'short'}).toUpperCase()}</span><span>${Math.round(data.daily.temperature_2m_min[i])}° / ${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
-                }
-            } catch (e) { wLoc.innerText = "Meteo Offline"; }
+            }
         }
 
         // ===========================================
@@ -624,8 +663,7 @@
         }
 
         function updatePlayerUI(id, isPlaylist) {
-            // PARAMETRI AD BLOCKER OPTIMIZATION: 
-            // iv_load_policy=3 (no annotations), modestbranding=1, rel=0, controls=1, autoplay=1
+            // PARAMETRI AD BLOCKER OPTIMIZATION
             let src = isPlaylist 
                 ? `https://www.youtube.com/embed/videoseries?list=${id}&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&autoplay=1`
                 : `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3`;
