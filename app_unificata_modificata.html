@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Hub | Full Web Player v17</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           CORE STYLES
+           ========================================= */
+        :root {
+            --bg-dark: #020205;
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --neon-green: #0aff60;
+            --glass-base: rgba(10, 10, 12, 0.75);
+            --glass-border-color: rgba(255, 255, 255, 0.08);
+            --glass-blur: 40px;
+            --mouse-x: 50%;
+            --mouse-y: 50%;
+            --active-color: rgba(255, 255, 255, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            position: relative;
+            perspective: 1200px;
+        }
+
+        /* =========================================
+           BACKGROUND LAYERS
+           ========================================= */
+        #living-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        .deep-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 50% 120%, #050508 0%, #000000 80%);
+        }
+
+        .flashlight-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;
+            pointer-events: none;
+            background: radial-gradient(var(--spot-size, 400px) circle at var(--mouse-x) var(--mouse-y), var(--active-color), transparent 60%);
+            mix-blend-mode: screen;
+            opacity: 0.8;
+            transition: background 0.3s ease;
+        }
+        
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.3) 3px);
+            pointer-events: none; z-index: 3; opacity: 0.2;
+        }
+
+        /* =========================================
+           INTERACTIVE DARK LUCID GLASS ENGINE
+           ========================================= */
+        .interactive-glass {
+            position: relative;
+            background: var(--glass-base);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border-radius: 24px;
+            --rx: -1000px;
+            --ry: -1000px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .interactive-glass::before {
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; 
+            background: radial-gradient(350px circle at var(--rx) var(--ry), rgba(255,255,255,0.7), transparent 40%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none; z-index: 2; opacity: 1;
+        }
+
+        .interactive-glass::after {
+            content: ""; position: absolute; inset: 0; border-radius: inherit;
+            background: radial-gradient(400px circle at var(--rx) var(--ry), rgba(255,255,255,0.08), transparent 40%);
+            z-index: 1; pointer-events: none; opacity: 1;
+        }
+
+        .interactive-glass:hover {
+            transform: scale(1.01);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        /* =========================================
+           LAYOUT COMPONENTS
+           ========================================= */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 25px 40px; z-index: 100; position: relative; flex-shrink: 0;
+        }
+
+        .weather-wrapper { position: relative; z-index: 202; }
+        
+        .weather-widget {
+            display: flex; align-items: center; gap: 15px;
+            padding: 10px 25px; border-radius: 50px;
+            cursor: pointer; 
+        }
+
+        .weather-forecast {
+            position: absolute; top: 120%; left: 0; width: 300px;
+            background: rgba(5, 5, 8, 0.95);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; padding: 20px;
+            opacity: 0; visibility: hidden;
+            transform: translateY(-10px);
+            transition: 0.3s;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            pointer-events: none;
+            backdrop-filter: blur(20px);
+        }
+
+        .weather-wrapper:hover .weather-forecast {
+            opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto;
+        }
+
+        .forecast-section { margin-bottom: 15px; }
+        .forecast-title { color: var(--neon-blue); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+        .forecast-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; color: #ccc; }
+        
+        .clock-widget { text-align: right; }
+        .time { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 700; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .date { font-size: 0.9rem; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+
+        .hub-home {
+            flex: 1; display: flex; gap: 40px; justify-content: center; align-items: center;
+            padding: 20px; z-index: 50; position: relative;
+        }
+
+        .hub-tile {
+            width: 350px; height: 480px;
+            border-radius: 36px;
+            display: flex; flex-direction: column; padding: 36px;
+            cursor: pointer; text-decoration: none; color: white;
+            transform-style: preserve-3d; 
+            transform: perspective(1000px); 
+            box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.8);
+        }
+        
+        .hub-tile:hover { transform: none; }
+
+        .hub-tile-content { position: relative; z-index: 4; transform: translateZ(40px); pointer-events: none; display: flex; flex-direction: column; height: 100%; }
+        .hub-tile-title { font-size: 2.6rem; font-weight: 700; line-height: 1.05; color: #ffffff; letter-spacing: -1.2px; text-shadow: 0 4px 12px rgba(0,0,0,0.6); margin-bottom: 20px; }
+        .hub-tile-icon { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; padding-bottom: 10px; transform: translateZ(20px); }
+        .hub-tile-glow { position: absolute; width: 140px; height: 140px; border-radius: 50%; filter: blur(60px); opacity: 0.2; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: 0.5s; background: var(--tile-color); }
+        .hub-tile:hover .hub-tile-glow { opacity: 0.6; transform: translate(-50%, -50%) scale(1.3); }
+        .hub-tile-footer { margin-top: auto; text-align: center; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); color: #b0b0cc; font-size: 0.9rem; }
+
+        svg { width: 100%; height: 200px; overflow: visible; }
+        .neon-icon-glow { filter: drop-shadow(0 0 5px rgba(255,255,255,0.1)); transition: filter 0.3s; }
+        .hub-tile:hover .neon-icon-glow { filter: drop-shadow(0 0 15px var(--tile-color)); }
+
+        /* =========================================
+           FOOTER - UPDATED FOR FULL PLAYER
+           ========================================= */
+        .bottom-bar { display: flex; justify-content: space-between; align-items: flex-end; padding: 30px 40px; z-index: 200; position: relative; flex-shrink: 0; }
+        
+        .music-bar {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px 25px; border-radius: 20px;
+            width: 350px; cursor: pointer;
+        }
+
+        /* MODIFICATO: Popup più grande e senza padding */
+        .music-popup {
+            position: absolute; bottom: 0; left: 0; width: 450px; height: 320px; /* Altezza fissa maggiorata */
+            background: #000;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; 
+            padding: 0; /* REMOVED PADDING FOR FULL VIDEO */
+            overflow: hidden; /* Clips corners */
+            opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.95); 
+            transition: 0.3s; z-index: 9001; pointer-events: none; 
+            box-shadow: 0 30px 90px rgba(0,0,0,1);
+            display: flex; flex-direction: column;
+        }
+        .music-wrapper:hover .music-popup, .music-wrapper.locked .music-popup { opacity: 1; visibility: visible; transform: translateY(-80px) scale(1); pointer-events: auto; }
+
+        /* MODIFICATO: Video riempie tutto */
+        .video-container { 
+            width: 100%; height: 100%; 
+            background: #000; 
+            margin: 0; border: none; border-radius: 0;
+            flex-grow: 1;
+        }
+        .video-container iframe { width: 100%; height: 100%; border: none; }
+
+        /* MODIFICATO: Controlli in Overlay a scomparsa */
+        .controls-area {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            transform: translateY(100%); /* Nascondi di default */
+            transition: transform 0.3s ease;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        /* Mostra controlli quando il mouse è sul popup */
+        .music-popup:hover .controls-area, .controls-area:focus-within {
+            transform: translateY(0);
+        }
+
+        .controls-area button { background: #222; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; }
+        .input-group { display: none; margin-top: 10px; gap: 8px; }
+        .input-group.active { display: flex; }
+        .input-group input { flex: 1; background: #111; border: 1px solid #333; color: white; padding: 8px 12px; border-radius: 6px; }
+
+        .system-status { display: flex; gap: 10px; }
+        .status-pill { display:flex; align-items:center; gap:8px; color:#888; background: rgba(0,0,0,0.4); padding:8px 12px; border-radius:8px; font-size: 0.8rem; border: 1px solid #222; }
+        .status-dot { width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 5px var(--neon-green); animation: pulseDot 2s infinite; }
+        @keyframes pulseDot { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* =========================================
+           APP VIEW & ANIMATIONS
+           ========================================= */
+        #hub-app-view {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000; background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px); display: none; flex-direction: column; padding: 40px;
+        }
+        #hub-app-view.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .hub-app-header { display: flex; align-items: center; margin-bottom: 30px; z-index: 1001; }
+        .hub-back-btn {
+            background: rgba(20, 20, 25, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        }
+        .hub-back-btn:hover { background: rgba(30, 30, 40, 0.9); transform: translateY(-2px); }
+        .hub-app-title { margin-left: 20px; font-size: 1.8rem; font-weight: 600; color: white; }
+        .hub-app-container { flex: 1; border-radius: 20px; overflow: hidden; background: rgba(10, 10, 15, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); }
+        #hub-iframe { width: 100%; height: 100%; border: none; background: white; }
+
+        /* Animazioni interne SVG (Hologram, etc) */
+        .place-setting-plate { opacity: 0; transform: scale(0); transform-box: fill-box; transform-origin: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .hub-tile[data-app-id="app-a"]:hover .place-setting-plate { opacity: 1; transform: scale(1); }
+        @keyframes hologram-deploy { 0% { opacity: 0; transform: scaleY(0) scaleX(0.8); } 60% { opacity: 0.9; transform: scaleY(1.1) scaleX(1.05); } 100% { opacity: 1; transform: scaleY(1) scaleX(1); } }
+        @keyframes hologram-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .hologram-anim-layer { opacity: 0; transform-origin: 0 0; transform: scaleY(0); }
+        .hub-tile[data-app-id="app-a"]:hover .hologram-anim-layer { animation: hologram-deploy 0.5s ease-out forwards, hologram-idle 2s ease-in-out 0.5s infinite; }
+        .hologram-text { font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; fill: #00f3ff; text-shadow: 0 0 5px #00f3ff; letter-spacing: 1px; }
+        .hologram-border { fill: rgba(0, 243, 255, 0.1); stroke: #00f3ff; stroke-width: 1; filter: drop-shadow(0 0 4px #00f3ff); }
+        .hologram-beam { fill: url(#hologramGrad); opacity: 0.6; }
+        @keyframes hand-browse-sequence { 0% { transform: translate(10px, 30px) rotate(-10deg); } 30% { transform: translate(-10px, -15px) rotate(-25deg); } 40% { transform: translate(-10px, -15px) rotate(-25deg) scale(0.85); } 50% { transform: translate(-10px, -15px) rotate(-25deg) scale(1.0); } 70% { transform: translate(-10px, -15px) rotate(-25deg); } 100% { transform: translate(10px, 30px) rotate(-10deg); } }
+        .hand-cursor { transform: translate(10px, 30px) rotate(-10deg); transform-origin: center; transition: transform 0.3s; }
+        .hub-tile:hover .hand-cursor { animation: hand-browse-sequence 2s infinite ease-in-out; }
+        @keyframes screen-tap-react { 0%, 35% { fill: #00d2d3; filter: brightness(1); } 40% { fill: #fff; filter: brightness(2); } 50% { fill: #00d2d3; filter: brightness(1); } 100% { fill: #00d2d3; filter: brightness(1); } }
+        .totem-screen-fill { transition: fill 0.3s; }
+        .hub-tile:hover .totem-screen-fill { animation: screen-tap-react 2s infinite ease-in-out; }
+        @keyframes steam-rise { 0% { opacity: 0; transform: translateY(0) scale(0.8); } 50% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-15px) scale(1.2); } }
+        .steam-path { opacity: 0; }
+        .hub-tile:hover .steam-path { animation: steam-rise 2s infinite; }
+        .hub-tile:hover .steam-1 { animation-delay: 0s; } .hub-tile:hover .steam-2 { animation-delay: 0.5s; } .hub-tile:hover .steam-3 { animation-delay: 1s; }
+        .clock-hand { transform-origin: center; transform-box: fill-box; }
+        .hub-tile:hover .clock-hand { animation: spin 4s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 1200px) { .hub-home { flex-wrap: wrap; } }
+        @media (max-width: 768px) { .hub-home { flex-direction: column; padding: 20px; gap: 20px; } .hub-tile { width: 100%; max-width: 400px; height: 400px; } }
+    </style>
+</head>
+<body>
+
+    <svg style="width:0;height:0;position:absolute;" aria-hidden="true">
+        <defs>
+            <linearGradient id="iconGradA" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#54a0ff; stop-opacity:1" /><stop offset="100%" style="stop-color:#2e86de; stop-opacity:1" /></linearGradient>
+            <linearGradient id="iconGradB" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#00d2d3; stop-opacity:1" /><stop offset="100%" style="stop-color:#00a8a8; stop-opacity:1" /></linearGradient>
+            <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#a29bfe; stop-opacity:1" /><stop offset="100%" style="stop-color:#0984e3; stop-opacity:1" /></linearGradient>
+            <linearGradient id="hologramGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:rgba(0, 243, 255, 0.4); stop-opacity:1" /><stop offset="100%" style="stop-color:rgba(0, 243, 255, 0); stop-opacity:0" /></linearGradient>
+            <filter id="handGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/><feFlood flood-color="#00d2d3" result="color"/><feComposite in="color" in2="blur" operator="in" result="shadow"/><feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+    </svg>
+
+    <!-- BACKGROUND LAYERS -->
+    <div class="deep-bg"></div>
+    <canvas id="living-bg"></canvas>
+    <div class="flashlight-layer"></div>
+    <div class="scanlines"></div>
+
+    <!-- HEADER -->
+    <header class="top-bar">
+        <div class="weather-wrapper">
+            <div class="weather-widget interactive-glass">
+                <div style="font-size: 1.5rem" id="w-icon">🌍</div>
+                <div style="display:flex; flex-direction:column; line-height:1.2">
+                    <span style="font-weight:700" id="w-temp">--°C</span>
+                    <span style="font-size:0.8rem; color:#aaa" id="w-loc">Milano</span>
+                </div>
+            </div>
+            <div class="weather-forecast">
+                <div class="forecast-section">
+                    <div class="forecast-title">Prossime Ore</div>
+                    <div id="hourly-forecast">
+                        <div class="forecast-row"><span>Caricamento...</span></div>
+                    </div>
+                </div>
+                <div class="forecast-section">
+                    <div class="forecast-title">Prossimi Giorni</div>
+                    <div id="daily-forecast">
+                        <div class="forecast-row"><span>...</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clock-widget">
+            <div class="time" id="clock">00:00</div>
+            <div class="date" id="date">DATA</div>
+        </div>
+    </header>
+
+    <!-- HOME VIEW -->
+    <main class="hub-home" id="hub-home">
+        <!-- Tiles generate via JS -->
+    </main>
+
+    <!-- APP VIEW -->
+    <section id="hub-app-view">
+        <div class="hub-app-header">
+            <button class="hub-back-btn" onclick="closeApp()">← Torna alla Home</button>
+            <div class="hub-app-title" id="hub-app-title">App</div>
+        </div>
+        <div class="hub-app-container">
+            <iframe id="hub-iframe"></iframe>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bottom-bar">
+        <div class="music-wrapper" id="music-wrapper">
+            <div class="music-bar interactive-glass">
+                <div style="font-size:1.5rem">🎵</div>
+                <div style="display:flex; flex-direction:column; margin-left:10px">
+                    <span style="font-weight:600" id="music-title">Lofi Girl Radio</span>
+                    <span style="font-size:0.75rem; color:#aaa" id="music-author">24/7 beats</span>
+                </div>
+            </div>
+            <div class="music-popup">
+                <div class="video-container">
+                    <iframe id="yt-frame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media;"></iframe>
+                </div>
+                <div class="controls-area">
+                    <button onclick="toggleMusicInput()">Cambia Link YouTube</button>
+                    <div class="input-group" id="input-group">
+                        <input type="text" id="yt-link" placeholder="ID Video o Link...">
+                        <button onclick="processYouTubeLink()">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="system-status">
+            <div class="status-pill"><div class="status-dot"></div> System Online</div>
+        </div>
+    </footer>
+
+    <!-- TEMPLATES DELLE APP -->
+    <template id="app-a"><html><body style="background:#f4f4f4; padding:20px; font-family:sans-serif;"><h1>Gestione Sala</h1></body></html></template>
+    <template id="app-b"><html><body style="background:#e0f7fa; padding:20px; font-family:sans-serif;"><h1>Tothem Self</h1></body></html></template>
+    <template id="app-c"><html><body style="background:#f3e5f5; padding:20px; font-family:sans-serif;"><h1>Kitchen Monitor</h1></body></html></template>
+
+    <script>
+        // ===========================================
+        // ADVANCED PARTICLES
+        // ===========================================
+        const canvas = document.getElementById('living-bg');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        const mouse = { x: -1000, y: -1000 };
+
+        function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.baseX = this.x; this.baseY = this.y;
+                this.size = Math.random() * 2 + 0.5;
+                this.color = `rgba(${100 + Math.random()*155}, ${200 + Math.random()*55}, 255, ${Math.random()*0.3 + 0.1})`;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 0.3 + 0.1;
+                this.wanderRange = Math.random() * 50 + 20; 
+            }
+            update(time) {
+                this.x += Math.cos(this.angle + time * 0.001) * this.speed;
+                this.y += Math.sin(this.angle + time * 0.001) * this.speed;
+                const dx = mouse.x - this.x; const dy = mouse.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const forceRadius = 250; 
+                if (distance < forceRadius) {
+                    const force = (forceRadius - distance) / forceRadius;
+                    this.x += (dx / distance) * force * -4;
+                    this.y += (dy / distance) * force * -4;
+                }
+                if (this.x < 0) this.x = width; if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height; if (this.y > height) this.y = 0;
+            }
+            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); }
+        }
+
+        function initParticles() { particles = []; for (let i = 0; i < 150; i++) particles.push(new Particle()); }
+        let time = 0;
+        function animateParticles() { ctx.clearRect(0, 0, width, height); time++; particles.forEach(p => { p.update(time); p.draw(); }); requestAnimationFrame(animateParticles); }
+        initParticles(); animateParticles();
+
+        // ===========================================
+        // MOUSE TRACKING & BORDER LIGHTING
+        // ===========================================
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX; const y = e.clientY;
+            document.documentElement.style.setProperty('--mouse-x', x + 'px');
+            document.documentElement.style.setProperty('--mouse-y', y + 'px');
+            mouse.x = x; mouse.y = y;
+            const glassElements = document.querySelectorAll('.interactive-glass');
+            glassElements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                el.style.setProperty('--rx', (x - rect.left) + 'px');
+                el.style.setProperty('--ry', (y - rect.top) + 'px');
+            });
+        });
+
+        function applyTiltLogic() {
+            const cards = document.querySelectorAll('.hub-tile');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const centerX = rect.width / 2; const centerY = rect.height / 2;
+                    const rotateX = ((e.clientY - rect.top - centerY) / 20) * -1; 
+                    const rotateY = (e.clientX - rect.left - centerX) / 20;
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+                });
+                card.addEventListener('mouseenter', () => {
+                   const color = card.style.getPropertyValue('--neon-color');
+                   if(color) {
+                       document.documentElement.style.setProperty('--active-color', color);
+                       document.documentElement.style.setProperty('--spot-size', '600px'); 
+                   }
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale(1)`;
+                    document.documentElement.style.setProperty('--active-color', 'rgba(255,255,255,0.2)');
+                    document.documentElement.style.setProperty('--spot-size', '400px'); 
+                });
+            });
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('date').innerText = now.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'}).toUpperCase();
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ===========================================
+        // LOGICA METEO API
+        // ===========================================
+        const wTemp = document.getElementById('w-temp');
+        const wLoc = document.getElementById('w-loc');
+        const wIcon = document.getElementById('w-icon');
+        const hourlyDiv = document.getElementById('hourly-forecast');
+        const dailyDiv = document.getElementById('daily-forecast');
+
+        function getWeatherEmoji(code) {
+            if (code === 0) return "☀️"; if (code >= 1 && code <= 3) return "⛅";
+            if (code >= 45 && code <= 48) return "🌫️"; if (code >= 51 && code <= 67) return "🌧️";
+            if (code >= 71) return "❄️"; if (code >= 95) return "⛈️"; return "🌤️";
+        }
+
+        async function initWeather() {
+            try {
+                let lat, lon, city;
+                try {
+                    const ipRes = await fetch('https://ipapi.co/json/');
+                    const ipData = await ipRes.json();
+                    lat = ipData.latitude; lon = ipData.longitude; city = ipData.city;
+                } catch { lat = 45.46; lon = 9.19; city = "Milano"; } 
+                wLoc.innerText = city;
+                const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
+                const data = await wRes.json();
+                wTemp.innerText = Math.round(data.current_weather.temperature) + "°C";
+                wIcon.innerText = getWeatherEmoji(data.current_weather.weathercode);
+                hourlyDiv.innerHTML = "";
+                const currentHour = new Date().getHours();
+                let countH = 0;
+                for(let i=0; i<data.hourly.time.length; i++) {
+                    const h = new Date(data.hourly.time[i]).getHours();
+                    if(h > currentHour && countH < 4) {
+                        hourlyDiv.innerHTML += `<div class="forecast-row"><span>${h}:00</span><span>${getWeatherEmoji(data.hourly.weathercode[i])} ${Math.round(data.hourly.temperature_2m[i])}°</span></div>`;
+                        countH++;
+                    }
+                }
+                dailyDiv.innerHTML = "";
+                for(let i=1; i<=3; i++) {
+                    const date = new Date(data.daily.time[i]);
+                    dailyDiv.innerHTML += `<div class="forecast-row"><span>${date.toLocaleDateString('it-IT', {weekday:'short'}).toUpperCase()}</span><span>${Math.round(data.daily.temperature_2m_min[i])}° / ${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
+                }
+            } catch (e) { wLoc.innerText = "Meteo Offline"; }
+        }
+
+        // ===========================================
+        // APP REGISTRY & RENDER
+        // ===========================================
+        const APP_REGISTRY = [
+            {
+                id: 'app-a', label: 'Gestione<br>Sala', subtitle: 'Tavoli e comande', iconColor: '#54a0ff',
+                iconSvg: `<svg viewBox="0 0 240 160"><g transform="translate(-14, -10) scale(1.12)" class="neon-icon-glow"><rect x="80" y="62" width="80" height="8" rx="4" fill="#aaddff" /><line x1="120" y1="70" x2="120" y2="115" stroke="white" stroke-width="5" /><path d="M95 125 Q120 105 145 125" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/><g transform="translate(60, 60)"><path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" transform="rotate(-12)"/><rect x="10" y="36" width="32" height="8" rx="3" fill="white" /><line x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" transform="rotate(8 15 44)"/><line x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" transform="rotate(4 35 44)"/></g><g transform="translate(180, 60) scale(-1, 1)"><path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" transform="rotate(-12)"/><rect x="10" y="36" width="32" height="8" rx="3" fill="white" /><line x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" transform="rotate(8 15 44)"/><line x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" transform="rotate(4 35 44)"/></g><g class="place-setting-plate"><ellipse cx="95" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/><ellipse cx="145" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/></g><g class="hologram-anchor" transform="translate(120, 62)"><g class="hologram-anim-layer"><path class="hologram-beam" d="M0 0 L-20 -45 L20 -45 Z" /><rect x="-25" y="-45" width="50" height="18" rx="4" class="hologram-border" fill="rgba(0,0,0,0.8)" /><text x="0" y="-32" text-anchor="middle" class="hologram-text">NOVITÀ</text></g></g></g></svg>`
+            },
+            {
+                id: 'app-b', label: 'Tothem<br>Self', subtitle: 'Ordini self-service', iconColor: '#00d2d3',
+                iconSvg: `<svg viewBox="0 0 160 200"><g transform="translate(-20, -18) scale(1.32)" class="neon-icon-glow"><rect x="55" y="20" width="50" height="140" rx="6" fill="white" /><rect x="45" y="160" width="70" height="6" rx="3" fill="white" /><rect x="58" y="28" width="44" height="64" rx="4" fill="black" /><rect class="totem-screen-fill" x="61" y="31" width="38" height="58" rx="2" fill="#00d2d3" /><rect x="65" y="115" width="30" height="4" rx="2" fill="#333" /><image class="hand-cursor" href="https://static.vecteezy.com/system/resources/previews/021/996/826/non_2x/hand-cursor-icon-clip-art-free-png.png" x="84" y="65" width="55" height="55" filter="url(#handGlow)"/></g></svg>`
+            },
+            {
+                id: 'app-c', label: 'Kitchen<br>Monitor', subtitle: 'Monitor cucina e tempi', iconColor: '#8e44ad',
+                iconSvg: `<svg viewBox="0 0 240 200"><g transform="translate(120, 170)" opacity="0.8"><ellipse cx="0" cy="0" rx="132" ry="33" fill="none" stroke="#a29bfe" stroke-width="1.5" opacity="0.15"/></g><g transform="translate(120, 76) scale(1.22)"><g transform="translate(-100, -60)" class="neon-icon-glow"><path d="M 90 105 L 85 127 L 115 127 L 110 105 Z" fill="#5f27cd" /><rect x="70" y="132" width="60" height="10" rx="5" fill="#5f27cd" /><rect x="10" y="0" width="180" height="105" rx="8" fill="url(#frameGrad)" /><rect x="18" y="8" width="164" height="89" rx="3" fill="white" /><g transform="translate(100, 52) scale(1.35)"><g transform="translate(-22, 2)" stroke="#341f97" stroke-width="2.2" stroke-linecap="round" fill="none"><path d="M-10 0 C-10 8 -4 12 0 12 C4 12 10 8 10 0 L10 -4 L-10 -4 Z" /><path d="M10 -2 C14 -2 14 6 10 6" /><g transform="translate(0, -12)"><path class="steam-path steam-1" d="M-5 0 L-5 -5" /><path class="steam-path steam-2" d="M0 0 L0 -7" /><path class="steam-path steam-3" d="M5 0 L5 -5" /></g></g><g transform="translate(22, 5) scale(1.12)" stroke="#341f97" stroke-width="1.96" fill="none"><circle cx="0" cy="0" r="9" /><line class="clock-hand" x1="0" y1="0" x2="0" y2="-5" stroke-linecap="round" /></g></g></g></g></svg>`
+            }
+        ];
+
+        function renderHomeTiles() {
+            const homeContainer = document.getElementById('hub-home');
+            homeContainer.innerHTML = '';
+            APP_REGISTRY.forEach(app => {
+                const tile = document.createElement('div');
+                tile.className = 'hub-tile interactive-glass';
+                tile.onclick = () => openApp(app.id);
+                tile.setAttribute('data-app-id', app.id);
+                tile.style.setProperty('--tile-color', app.iconColor);
+                tile.style.setProperty('--neon-color', app.iconColor); 
+                tile.innerHTML = `
+                    <div class="hub-tile-content">
+                        <div class="hub-tile-title">${app.label}</div>
+                        <div class="hub-tile-icon"><div class="hub-tile-glow"></div>${app.iconSvg}</div>
+                        <div class="hub-tile-footer">${app.subtitle}</div>
+                    </div>`;
+                homeContainer.appendChild(tile);
+            });
+            applyTiltLogic();
+        }
+
+        // ===========================================
+        // ADVANCED PLAYER LOGIC
+        // ===========================================
+        const musicWrapper = document.getElementById('music-wrapper');
+        const inputGroup = document.getElementById('input-group');
+        const ytLink = document.getElementById('yt-link');
+        const ytFrame = document.getElementById('yt-frame');
+        const musicTitle = document.getElementById('music-title');
+        const musicAuthor = document.getElementById('music-author');
+        
+        const APIKEY = 'AIzaSyDji6gfiKUEIPuWpkwAyBkfkdT5IQNA8'; 
+        let currentId = "jfKfPfyJRdk"; 
+
+        function initializePlayer() {
+            musicTitle.innerText = "Lofi Girl Radio";
+            musicAuthor.innerText = "24/7 lofi hip hop beats";
+            updatePlayerUI(currentId, false);
+        }
+
+        function toggleMusicInput() {
+            musicWrapper.classList.add('locked');
+            inputGroup.classList.add('active');
+            ytLink.focus();
+        }
+
+        async function processYouTubeLink() {
+            const val = ytLink.value.trim();
+            if(!val) { closeMusicInput(); return; }
+
+            const listMatch = val.match(/[?&]list=([^&]+)/);
+            const vidMatch = val.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+
+            let id = "";
+            let isPlaylist = false;
+
+            if (listMatch) { id = listMatch[1]; isPlaylist = true; } 
+            else if (vidMatch) { id = vidMatch[1]; isPlaylist = false; } 
+            else if (val.length === 11) { id = val; isPlaylist = false; } 
+            else { alert("Link non valido"); return; }
+
+            musicTitle.innerText = "Caricamento...";
+            
+            try {
+                let apiUrl = isPlaylist 
+                    ? `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${id}&key=${APIKEY}`
+                    : `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${APIKEY}`;
+
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                if (data.items && data.items.length > 0) {
+                    const snippet = data.items[0].snippet;
+                    musicTitle.innerText = snippet.title.substring(0, 35) + (snippet.title.length > 35 ? "..." : "");
+                    musicAuthor.innerText = snippet.channelTitle;
+                    updatePlayerUI(id, isPlaylist);
+                } else { throw new Error("No items found"); }
+            } catch (e) {
+                musicTitle.innerText = "YouTube Video";
+                musicAuthor.innerText = "Titolo non disponibile";
+                updatePlayerUI(id, isPlaylist);
+            }
+            
+            closeMusicInput();
+            ytLink.value = "";
+        }
+
+        function updatePlayerUI(id, isPlaylist) {
+            let src = isPlaylist 
+                ? `https://www.youtube.com/embed/videoseries?list=${id}&enablejsapi=1&rel=0&modestbranding=1`
+                : `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1`;
+            ytFrame.src = ""; 
+            setTimeout(() => { ytFrame.src = src; }, 100);
+        }
+
+        function closeMusicInput() {
+            musicWrapper.classList.remove('locked');
+            inputGroup.classList.remove('active');
+        }
+
+        ytLink.addEventListener('keypress', function(e) { if (e.key === 'Enter') processYouTubeLink(); });
+        window.addEventListener('DOMContentLoaded', initializePlayer);
+
+        // --- APP NAV LOGIC ---
+        function openApp(appId) {
+            const app = APP_REGISTRY.find(a => a.id === appId);
+            if (!app) return;
+            document.getElementById('hub-home').style.display = 'none';
+            const appView = document.getElementById('hub-app-view');
+            appView.classList.add('active');
+            document.getElementById('hub-app-title').innerHTML = app.label.replace('<br>', ' ');
+            const template = document.getElementById(appId);
+            const iframe = document.getElementById('hub-iframe');
+            if (template && iframe) iframe.srcdoc = template.innerHTML;
+        }
+
+        function closeApp() {
+            document.getElementById('hub-app-view').classList.remove('active');
+            document.getElementById('hub-home').style.display = 'flex';
+            document.getElementById('hub-iframe').srcdoc = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { renderHomeTiles(); initWeather(); });
+    </script>
+</body>
+</html>
