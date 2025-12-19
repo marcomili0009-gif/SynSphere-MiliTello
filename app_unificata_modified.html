@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Hub | Weather Integration v15</title>
+    <title>Kitchen Hub | Full Web Player v17</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
@@ -110,7 +110,6 @@
             padding: 25px 40px; z-index: 100; position: relative; flex-shrink: 0;
         }
 
-        /* --- AGGIUNTA STILI METEO POPUP --- */
         .weather-wrapper { position: relative; z-index: 202; }
         
         .weather-widget {
@@ -119,7 +118,6 @@
             cursor: pointer; 
         }
 
-        /* Stile popup identico a file di riferimento ma adattato al dark theme */
         .weather-forecast {
             position: absolute; top: 120%; left: 0; width: 300px;
             background: rgba(5, 5, 8, 0.95);
@@ -140,7 +138,6 @@
         .forecast-section { margin-bottom: 15px; }
         .forecast-title { color: var(--neon-blue); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
         .forecast-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; color: #ccc; }
-        /* ---------------------------------- */
         
         .clock-widget { text-align: right; }
         .time { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 700; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
@@ -161,7 +158,7 @@
             box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.8);
         }
         
-        .hub-tile:hover { transform: none; /* Gestito da JS tilt */ }
+        .hub-tile:hover { transform: none; }
 
         .hub-tile-content { position: relative; z-index: 4; transform: translateZ(40px); pointer-events: none; display: flex; flex-direction: column; height: 100%; }
         .hub-tile-title { font-size: 2.6rem; font-weight: 700; line-height: 1.05; color: #ffffff; letter-spacing: -1.2px; text-shadow: 0 4px 12px rgba(0,0,0,0.6); margin-bottom: 20px; }
@@ -174,7 +171,9 @@
         .neon-icon-glow { filter: drop-shadow(0 0 5px rgba(255,255,255,0.1)); transition: filter 0.3s; }
         .hub-tile:hover .neon-icon-glow { filter: drop-shadow(0 0 15px var(--tile-color)); }
 
-        /* FOOTER */
+        /* =========================================
+           FOOTER - UPDATED FOR FULL PLAYER
+           ========================================= */
         .bottom-bar { display: flex; justify-content: space-between; align-items: flex-end; padding: 30px 40px; z-index: 200; position: relative; flex-shrink: 0; }
         
         .music-bar {
@@ -183,14 +182,44 @@
             width: 350px; cursor: pointer;
         }
 
+        /* MODIFICATO: Popup più grande e senza padding */
         .music-popup {
-            position: absolute; bottom: 0; left: 0; width: 420px; background: rgba(5,5,8,0.95);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 15px;
-            opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.95); transition: 0.3s; z-index: 9001; pointer-events: none; backdrop-filter: blur(10px);
+            position: absolute; bottom: 0; left: 0; width: 450px; height: 320px; /* Altezza fissa maggiorata */
+            background: #000;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; 
+            padding: 0; /* REMOVED PADDING FOR FULL VIDEO */
+            overflow: hidden; /* Clips corners */
+            opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.95); 
+            transition: 0.3s; z-index: 9001; pointer-events: none; 
+            box-shadow: 0 30px 90px rgba(0,0,0,1);
+            display: flex; flex-direction: column;
         }
         .music-wrapper:hover .music-popup, .music-wrapper.locked .music-popup { opacity: 1; visibility: visible; transform: translateY(-80px) scale(1); pointer-events: auto; }
 
-        .video-container { width: 100%; height: 240px; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #222; }
+        /* MODIFICATO: Video riempie tutto */
+        .video-container { 
+            width: 100%; height: 100%; 
+            background: #000; 
+            margin: 0; border: none; border-radius: 0;
+            flex-grow: 1;
+        }
+        .video-container iframe { width: 100%; height: 100%; border: none; }
+
+        /* MODIFICATO: Controlli in Overlay a scomparsa */
+        .controls-area {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            transform: translateY(100%); /* Nascondi di default */
+            transition: transform 0.3s ease;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        /* Mostra controlli quando il mouse è sul popup */
+        .music-popup:hover .controls-area, .controls-area:focus-within {
+            transform: translateY(0);
+        }
+
         .controls-area button { background: #222; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; }
         .input-group { display: none; margin-top: 10px; gap: 8px; }
         .input-group.active { display: flex; }
@@ -202,7 +231,7 @@
         @keyframes pulseDot { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         /* =========================================
-           APP VIEW & ANIMATIONS (Invariato)
+           APP VIEW & ANIMATIONS
            ========================================= */
         #hub-app-view {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -270,7 +299,6 @@
 
     <!-- HEADER -->
     <header class="top-bar">
-        <!-- AGGIUNTO WRAPPER METEO PER IL POPUP -->
         <div class="weather-wrapper">
             <div class="weather-widget interactive-glass">
                 <div style="font-size: 1.5rem" id="w-icon">🌍</div>
@@ -279,7 +307,6 @@
                     <span style="font-size:0.8rem; color:#aaa" id="w-loc">Milano</span>
                 </div>
             </div>
-            <!-- FINESTRA POPUP INTEGRATA -->
             <div class="weather-forecast">
                 <div class="forecast-section">
                     <div class="forecast-title">Prossime Ore</div>
@@ -302,7 +329,7 @@
         </div>
     </header>
 
-    <!-- HOME VIEW - TILES GRID -->
+    <!-- HOME VIEW -->
     <main class="hub-home" id="hub-home">
         <!-- Tiles generate via JS -->
     </main>
@@ -321,7 +348,6 @@
     <!-- FOOTER -->
     <footer class="bottom-bar">
         <div class="music-wrapper" id="music-wrapper">
-            <!-- AGGIUNTO 'interactive-glass' AL PLAYER -->
             <div class="music-bar interactive-glass">
                 <div style="font-size:1.5rem">🎵</div>
                 <div style="display:flex; flex-direction:column; margin-left:10px">
@@ -354,7 +380,7 @@
 
     <script>
         // ===========================================
-        // ADVANCED PARTICLES (AUTONOMOUS + INTERACTIVE)
+        // ADVANCED PARTICLES
         // ===========================================
         const canvas = document.getElementById('living-bg');
         const ctx = canvas.getContext('2d');
@@ -368,113 +394,62 @@
 
         class Particle {
             constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.baseX = this.x;
-                this.baseY = this.y;
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.baseX = this.x; this.baseY = this.y;
                 this.size = Math.random() * 2 + 0.5;
-                // Colore "freddo" per lo sfondo dark
                 this.color = `rgba(${100 + Math.random()*155}, ${200 + Math.random()*55}, 255, ${Math.random()*0.3 + 0.1})`;
-                
-                // Variabili per il movimento autonomo
                 this.angle = Math.random() * Math.PI * 2;
                 this.speed = Math.random() * 0.3 + 0.1;
-                this.wanderRange = Math.random() * 50 + 20; // Raggio di vagabondaggio
+                this.wanderRange = Math.random() * 50 + 20; 
             }
-
             update(time) {
-                // 1. Movimento Autonomo (fluttuazione naturale)
-                // Usiamo il tempo per creare onde sinusoidali
                 this.x += Math.cos(this.angle + time * 0.001) * this.speed;
                 this.y += Math.sin(this.angle + time * 0.001) * this.speed;
-
-                // 2. Interazione Mouse (Repulsione)
-                const dx = mouse.x - this.x;
-                const dy = mouse.y - this.y;
+                const dx = mouse.x - this.x; const dy = mouse.y - this.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 const forceRadius = 250; 
-                
                 if (distance < forceRadius) {
                     const force = (forceRadius - distance) / forceRadius;
-                    const directionX = (dx / distance) * force * -4; // Spinta più forte
-                    const directionY = (dy / distance) * force * -4;
-                    this.x += directionX;
-                    this.y += directionY;
+                    this.x += (dx / distance) * force * -4;
+                    this.y += (dy / distance) * force * -4;
                 }
-
-                // 3. Teletrasporto ai bordi (Infinity Pool)
-                if (this.x < 0) this.x = width;
-                if (this.x > width) this.x = 0;
-                if (this.y < 0) this.y = height;
-                if (this.y > height) this.y = 0;
+                if (this.x < 0) this.x = width; if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height; if (this.y > height) this.y = 0;
             }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-            }
+            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); }
         }
 
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < 150; i++) { // Aumentate particelle
-                particles.push(new Particle());
-            }
-        }
-
+        function initParticles() { particles = []; for (let i = 0; i < 150; i++) particles.push(new Particle()); }
         let time = 0;
-        function animateParticles() {
-            ctx.clearRect(0, 0, width, height);
-            time++;
-            particles.forEach(p => {
-                p.update(time);
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
-
-        initParticles();
-        animateParticles();
+        function animateParticles() { ctx.clearRect(0, 0, width, height); time++; particles.forEach(p => { p.update(time); p.draw(); }); requestAnimationFrame(animateParticles); }
+        initParticles(); animateParticles();
 
         // ===========================================
-        // UNIFIED MOUSE TRACKING & BORDER LIGHTING
+        // MOUSE TRACKING & BORDER LIGHTING
         // ===========================================
-        
         document.addEventListener('mousemove', (e) => {
             const x = e.clientX; const y = e.clientY;
-            
-            // Globale per torcia e particelle
             document.documentElement.style.setProperty('--mouse-x', x + 'px');
             document.documentElement.style.setProperty('--mouse-y', y + 'px');
             mouse.x = x; mouse.y = y;
-
-            // Calcolo coordinate locali per OGNI elemento interactive-glass
-            // Questo crea l'effetto "bordo che si illumina" specifico per ogni box
             const glassElements = document.querySelectorAll('.interactive-glass');
             glassElements.forEach(el => {
                 const rect = el.getBoundingClientRect();
-                const localX = x - rect.left;
-                const localY = y - rect.top;
-                el.style.setProperty('--rx', localX + 'px');
-                el.style.setProperty('--ry', localY + 'px');
+                el.style.setProperty('--rx', (x - rect.left) + 'px');
+                el.style.setProperty('--ry', (y - rect.top) + 'px');
             });
         });
 
-        // 3D Tilt Logic (Solo per le Card Tiles)
         function applyTiltLogic() {
             const cards = document.querySelectorAll('.hub-tile');
             cards.forEach(card => {
                 card.addEventListener('mousemove', (e) => {
                     const rect = card.getBoundingClientRect();
-                    const x = e.clientX - rect.left; 
-                    const y = e.clientY - rect.top;
                     const centerX = rect.width / 2; const centerY = rect.height / 2;
-                    const rotateX = ((y - centerY) / 20) * -1; const rotateY = (x - centerX) / 20;
+                    const rotateX = ((e.clientY - rect.top - centerY) / 20) * -1; 
+                    const rotateY = (e.clientX - rect.left - centerX) / 20;
                     card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
                 });
-                
                 card.addEventListener('mouseenter', () => {
                    const color = card.style.getPropertyValue('--neon-color');
                    if(color) {
@@ -482,7 +457,6 @@
                        document.documentElement.style.setProperty('--spot-size', '600px'); 
                    }
                 });
-
                 card.addEventListener('mouseleave', () => {
                     card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale(1)`;
                     document.documentElement.style.setProperty('--active-color', 'rgba(255,255,255,0.2)');
@@ -499,7 +473,7 @@
         setInterval(updateClock, 1000); updateClock();
 
         // ===========================================
-        // LOGICA METEO API (NUOVA AGGIUNTA)
+        // LOGICA METEO API
         // ===========================================
         const wTemp = document.getElementById('w-temp');
         const wLoc = document.getElementById('w-loc');
@@ -508,13 +482,9 @@
         const dailyDiv = document.getElementById('daily-forecast');
 
         function getWeatherEmoji(code) {
-            if (code === 0) return "☀️";
-            if (code >= 1 && code <= 3) return "⛅";
-            if (code >= 45 && code <= 48) return "🌫️";
-            if (code >= 51 && code <= 67) return "🌧️";
-            if (code >= 71) return "❄️";
-            if (code >= 95) return "⛈️";
-            return "🌤️";
+            if (code === 0) return "☀️"; if (code >= 1 && code <= 3) return "⛅";
+            if (code >= 45 && code <= 48) return "🌫️"; if (code >= 51 && code <= 67) return "🌧️";
+            if (code >= 71) return "❄️"; if (code >= 95) return "⛈️"; return "🌤️";
         }
 
         async function initWeather() {
@@ -525,16 +495,11 @@
                     const ipData = await ipRes.json();
                     lat = ipData.latitude; lon = ipData.longitude; city = ipData.city;
                 } catch { lat = 45.46; lon = 9.19; city = "Milano"; } 
-                
                 wLoc.innerText = city;
                 const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
                 const data = await wRes.json();
-                
-                // Current
                 wTemp.innerText = Math.round(data.current_weather.temperature) + "°C";
                 wIcon.innerText = getWeatherEmoji(data.current_weather.weathercode);
-
-                // Hourly
                 hourlyDiv.innerHTML = "";
                 const currentHour = new Date().getHours();
                 let countH = 0;
@@ -545,17 +510,12 @@
                         countH++;
                     }
                 }
-
-                // Daily
                 dailyDiv.innerHTML = "";
                 for(let i=1; i<=3; i++) {
                     const date = new Date(data.daily.time[i]);
                     dailyDiv.innerHTML += `<div class="forecast-row"><span>${date.toLocaleDateString('it-IT', {weekday:'short'}).toUpperCase()}</span><span>${Math.round(data.daily.temperature_2m_min[i])}° / ${Math.round(data.daily.temperature_2m_max[i])}°</span></div>`;
                 }
-
-            } catch (e) {
-                wLoc.innerText = "Meteo Offline";
-            }
+            } catch (e) { wLoc.innerText = "Meteo Offline"; }
         }
 
         // ===========================================
@@ -563,152 +523,120 @@
         // ===========================================
         const APP_REGISTRY = [
             {
-                id: 'app-a',
-                label: 'Gestione<br>Sala',
-                subtitle: 'Tavoli e comande',
-                iconColor: '#54a0ff',
-                iconSvg: `
-                    <svg viewBox="0 0 240 160">
-                        <g transform="translate(-14, -10) scale(1.12)" class="neon-icon-glow">
-                            <rect x="80" y="62" width="80" height="8" rx="4" fill="#aaddff" />
-                            <line x1="120" y1="70" x2="120" y2="115" stroke="white" stroke-width="5" />
-                            <path d="M95 125 Q120 105 145 125" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
-                            <g transform="translate(60, 60)">
-                                <g style="transform-box: fill-box; transform-origin: bottom center; transform: rotate(-12deg);">
-                                    <path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" />
-                                </g>
-                                <rect x="10" y="36" width="32" height="8" rx="3" fill="white" />
-                                <line style="transform-box: fill-box; transform-origin: top center; transform: rotate(8deg);" x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" stroke-linecap="round"/>
-                                <line style="transform-box: fill-box; transform-origin: top center; transform: rotate(4deg);" x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" stroke-linecap="round"/>
-                            </g>
-                            <g transform="translate(180, 60) scale(-1, 1)">
-                                <g style="transform-box: fill-box; transform-origin: bottom center; transform: rotate(-12deg);">
-                                    <path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" />
-                                </g>
-                                <rect x="10" y="36" width="32" height="8" rx="3" fill="white" />
-                                <line style="transform-box: fill-box; transform-origin: top center; transform: rotate(8deg);" x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" stroke-linecap="round"/>
-                                <line style="transform-box: fill-box; transform-origin: top center; transform: rotate(4deg);" x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" stroke-linecap="round"/>
-                            </g>
-                            <g class="place-setting-plate">
-                                <ellipse cx="95" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/>
-                                <ellipse cx="145" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/>
-                            </g>
-                            <g class="hologram-anchor" transform="translate(120, 62)">
-                                <g class="hologram-anim-layer">
-                                    <path class="hologram-beam" d="M0 0 L-20 -45 L20 -45 Z" />
-                                    <rect x="-25" y="-45" width="50" height="18" rx="4" class="hologram-border" fill="rgba(0,0,0,0.8)" />
-                                    <text x="0" y="-32" text-anchor="middle" class="hologram-text">NOVITÀ</text>
-                                </g>
-                            </g>
-                        </g>
-                    </svg>`
+                id: 'app-a', label: 'Gestione<br>Sala', subtitle: 'Tavoli e comande', iconColor: '#54a0ff',
+                iconSvg: `<svg viewBox="0 0 240 160"><g transform="translate(-14, -10) scale(1.12)" class="neon-icon-glow"><rect x="80" y="62" width="80" height="8" rx="4" fill="#aaddff" /><line x1="120" y1="70" x2="120" y2="115" stroke="white" stroke-width="5" /><path d="M95 125 Q120 105 145 125" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/><g transform="translate(60, 60)"><path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" transform="rotate(-12)"/><rect x="10" y="36" width="32" height="8" rx="3" fill="white" /><line x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" transform="rotate(8 15 44)"/><line x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" transform="rotate(4 35 44)"/></g><g transform="translate(180, 60) scale(-1, 1)"><path d="M4 0 L4 30 Q4 35 9 35" fill="none" stroke="url(#iconGradA)" stroke-width="10" stroke-linecap="round" transform="rotate(-12)"/><rect x="10" y="36" width="32" height="8" rx="3" fill="white" /><line x1="15" y1="44" x2="15" y2="75" stroke="white" stroke-width="3" transform="rotate(8 15 44)"/><line x1="35" y1="44" x2="44" y2="75" stroke="white" stroke-width="3" transform="rotate(4 35 44)"/></g><g class="place-setting-plate"><ellipse cx="95" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/><ellipse cx="145" cy="58" rx="7" ry="2.5" fill="#fff" filter="drop-shadow(0 0 2px #fff)"/></g><g class="hologram-anchor" transform="translate(120, 62)"><g class="hologram-anim-layer"><path class="hologram-beam" d="M0 0 L-20 -45 L20 -45 Z" /><rect x="-25" y="-45" width="50" height="18" rx="4" class="hologram-border" fill="rgba(0,0,0,0.8)" /><text x="0" y="-32" text-anchor="middle" class="hologram-text">NOVITÀ</text></g></g></g></svg>`
             },
             {
-                id: 'app-b',
-                label: 'Tothem<br>Self',
-                subtitle: 'Ordini self-service',
-                iconColor: '#00d2d3',
-                // FIX: Modificata solo questa riga da -16 a -20 per centratura (MANTENUTO DA V13)
-                iconSvg: `
-                    <svg viewBox="0 0 160 200">
-                        <g transform="translate(-20, -18) scale(1.32)" class="neon-icon-glow">
-                            <rect x="55" y="20" width="50" height="140" rx="6" fill="white" />
-                            <rect x="45" y="160" width="70" height="6" rx="3" fill="white" /> 
-                            <rect x="58" y="28" width="44" height="64" rx="4" fill="black" />
-                            <rect class="totem-screen-fill" x="61" y="31" width="38" height="58" rx="2" fill="#00d2d3" /> 
-                            <rect x="65" y="115" width="30" height="4" rx="2" fill="#333" />
-                            <image class="hand-cursor" href="https://static.vecteezy.com/system/resources/previews/021/996/826/non_2x/hand-cursor-icon-clip-art-free-png.png" 
-                                x="84" y="65" width="55" height="55" filter="url(#handGlow)"/>
-                        </g>
-                    </svg>`
+                id: 'app-b', label: 'Tothem<br>Self', subtitle: 'Ordini self-service', iconColor: '#00d2d3',
+                iconSvg: `<svg viewBox="0 0 160 200"><g transform="translate(-20, -18) scale(1.32)" class="neon-icon-glow"><rect x="55" y="20" width="50" height="140" rx="6" fill="white" /><rect x="45" y="160" width="70" height="6" rx="3" fill="white" /><rect x="58" y="28" width="44" height="64" rx="4" fill="black" /><rect class="totem-screen-fill" x="61" y="31" width="38" height="58" rx="2" fill="#00d2d3" /><rect x="65" y="115" width="30" height="4" rx="2" fill="#333" /><image class="hand-cursor" href="https://static.vecteezy.com/system/resources/previews/021/996/826/non_2x/hand-cursor-icon-clip-art-free-png.png" x="84" y="65" width="55" height="55" filter="url(#handGlow)"/></g></svg>`
             },
             {
-                id: 'app-c',
-                label: 'Kitchen<br>Monitor',
-                subtitle: 'Monitor cucina e tempi',
-                iconColor: '#8e44ad',
-                iconSvg: `
-                    <svg viewBox="0 0 240 200">
-                        <g transform="translate(120, 170)" opacity="0.8"> 
-                            <ellipse cx="0" cy="0" rx="132" ry="33" fill="none" stroke="#a29bfe" stroke-width="1.5" opacity="0.15"/>
-                        </g>
-                        <g transform="translate(120, 76) scale(1.22)">
-                            <g transform="translate(-100, -60)" class="neon-icon-glow">
-                                <path d="M 90 105 L 85 127 L 115 127 L 110 105 Z" fill="#5f27cd" />
-                                <rect x="70" y="132" width="60" height="10" rx="5" fill="#5f27cd" /> 
-                                <rect x="10" y="0" width="180" height="105" rx="8" fill="url(#frameGrad)" />
-                                <rect x="18" y="8" width="164" height="89" rx="3" fill="white" />
-                                <g transform="translate(100, 52) scale(1.35)">
-                                    <g transform="translate(-22, 2)" stroke="#341f97" stroke-width="2.2" stroke-linecap="round" fill="none">
-                                        <path d="M-10 0 C-10 8 -4 12 0 12 C4 12 10 8 10 0 L10 -4 L-10 -4 Z" />
-                                        <path d="M10 -2 C14 -2 14 6 10 6" />
-                                        <g transform="translate(0, -12)">
-                                            <path class="steam-path steam-1" d="M-5 0 L-5 -5" /> 
-                                            <path class="steam-path steam-2" d="M0 0 L0 -7" />
-                                            <path class="steam-path steam-3" d="M5 0 L5 -5" />
-                                        </g>
-                                    </g>
-                                    <g transform="translate(22, 5) scale(1.12)" stroke="#341f97" stroke-width="1.96" fill="none">
-                                        <circle cx="0" cy="0" r="9" />
-                                        <line class="clock-hand" x1="0" y1="0" x2="0" y2="-5" stroke-linecap="round" />
-                                    </g>
-                                </g>
-                            </g>
-                        </g>
-                    </svg>`
+                id: 'app-c', label: 'Kitchen<br>Monitor', subtitle: 'Monitor cucina e tempi', iconColor: '#8e44ad',
+                iconSvg: `<svg viewBox="0 0 240 200"><g transform="translate(120, 170)" opacity="0.8"><ellipse cx="0" cy="0" rx="132" ry="33" fill="none" stroke="#a29bfe" stroke-width="1.5" opacity="0.15"/></g><g transform="translate(120, 76) scale(1.22)"><g transform="translate(-100, -60)" class="neon-icon-glow"><path d="M 90 105 L 85 127 L 115 127 L 110 105 Z" fill="#5f27cd" /><rect x="70" y="132" width="60" height="10" rx="5" fill="#5f27cd" /><rect x="10" y="0" width="180" height="105" rx="8" fill="url(#frameGrad)" /><rect x="18" y="8" width="164" height="89" rx="3" fill="white" /><g transform="translate(100, 52) scale(1.35)"><g transform="translate(-22, 2)" stroke="#341f97" stroke-width="2.2" stroke-linecap="round" fill="none"><path d="M-10 0 C-10 8 -4 12 0 12 C4 12 10 8 10 0 L10 -4 L-10 -4 Z" /><path d="M10 -2 C14 -2 14 6 10 6" /><g transform="translate(0, -12)"><path class="steam-path steam-1" d="M-5 0 L-5 -5" /><path class="steam-path steam-2" d="M0 0 L0 -7" /><path class="steam-path steam-3" d="M5 0 L5 -5" /></g></g><g transform="translate(22, 5) scale(1.12)" stroke="#341f97" stroke-width="1.96" fill="none"><circle cx="0" cy="0" r="9" /><line class="clock-hand" x1="0" y1="0" x2="0" y2="-5" stroke-linecap="round" /></g></g></g></g></svg>`
             }
         ];
 
         function renderHomeTiles() {
             const homeContainer = document.getElementById('hub-home');
             homeContainer.innerHTML = '';
-            
             APP_REGISTRY.forEach(app => {
                 const tile = document.createElement('div');
-                // Aggiungiamo 'interactive-glass' anche qui, e 'hub-tile' per il layout/tilt
                 tile.className = 'hub-tile interactive-glass';
                 tile.onclick = () => openApp(app.id);
                 tile.setAttribute('data-app-id', app.id);
                 tile.style.setProperty('--tile-color', app.iconColor);
                 tile.style.setProperty('--neon-color', app.iconColor); 
-                
                 tile.innerHTML = `
                     <div class="hub-tile-content">
                         <div class="hub-tile-title">${app.label}</div>
-                        <div class="hub-tile-icon">
-                            <div class="hub-tile-glow"></div>
-                            ${app.iconSvg}
-                        </div>
+                        <div class="hub-tile-icon"><div class="hub-tile-glow"></div>${app.iconSvg}</div>
                         <div class="hub-tile-footer">${app.subtitle}</div>
-                    </div>
-                `;
+                    </div>`;
                 homeContainer.appendChild(tile);
             });
-            
             applyTiltLogic();
         }
 
-        // --- PLAYER LOGIC ---
+        // ===========================================
+        // ADVANCED PLAYER LOGIC
+        // ===========================================
         const musicWrapper = document.getElementById('music-wrapper');
         const inputGroup = document.getElementById('input-group');
         const ytLink = document.getElementById('yt-link');
         const ytFrame = document.getElementById('yt-frame');
         const musicTitle = document.getElementById('music-title');
-        let currentId = "jfKfPfyJRdk"; 
+        const musicAuthor = document.getElementById('music-author');
         
-        function initializePlayer() { updatePlayerUI(currentId); }
-        function toggleMusicInput() { musicWrapper.classList.add('locked'); inputGroup.classList.add('active'); ytLink.focus(); }
-        function processYouTubeLink() {
-            const val = ytLink.value.trim();
-            if(!val) { musicWrapper.classList.remove('locked'); inputGroup.classList.remove('active'); return; }
-            let id = val;
-            if(val.includes('v=')) id = val.split('v=')[1].split('&')[0];
-            else if(val.includes('youtu.be/')) id = val.split('youtu.be/')[1];
-            musicTitle.innerText = "YouTube Video";
-            updatePlayerUI(id);
-            musicWrapper.classList.remove('locked'); inputGroup.classList.remove('active'); ytLink.value = "";
+        const APIKEY = 'AIzaSyDji6gfiKUEIPuWpkwAyBkfkdT5IQNA8'; 
+        let currentId = "jfKfPfyJRdk"; 
+
+        function initializePlayer() {
+            musicTitle.innerText = "Lofi Girl Radio";
+            musicAuthor.innerText = "24/7 lofi hip hop beats";
+            updatePlayerUI(currentId, false);
         }
-        function updatePlayerUI(id) { ytFrame.src = `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1`; }
+
+        function toggleMusicInput() {
+            musicWrapper.classList.add('locked');
+            inputGroup.classList.add('active');
+            ytLink.focus();
+        }
+
+        async function processYouTubeLink() {
+            const val = ytLink.value.trim();
+            if(!val) { closeMusicInput(); return; }
+
+            const listMatch = val.match(/[?&]list=([^&]+)/);
+            const vidMatch = val.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+
+            let id = "";
+            let isPlaylist = false;
+
+            if (listMatch) { id = listMatch[1]; isPlaylist = true; } 
+            else if (vidMatch) { id = vidMatch[1]; isPlaylist = false; } 
+            else if (val.length === 11) { id = val; isPlaylist = false; } 
+            else { alert("Link non valido"); return; }
+
+            musicTitle.innerText = "Caricamento...";
+            
+            try {
+                let apiUrl = isPlaylist 
+                    ? `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${id}&key=${APIKEY}`
+                    : `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${APIKEY}`;
+
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                if (data.items && data.items.length > 0) {
+                    const snippet = data.items[0].snippet;
+                    musicTitle.innerText = snippet.title.substring(0, 35) + (snippet.title.length > 35 ? "..." : "");
+                    musicAuthor.innerText = snippet.channelTitle;
+                    updatePlayerUI(id, isPlaylist);
+                } else { throw new Error("No items found"); }
+            } catch (e) {
+                musicTitle.innerText = "YouTube Video";
+                musicAuthor.innerText = "Titolo non disponibile";
+                updatePlayerUI(id, isPlaylist);
+            }
+            
+            closeMusicInput();
+            ytLink.value = "";
+        }
+
+        function updatePlayerUI(id, isPlaylist) {
+            let src = isPlaylist 
+                ? `https://www.youtube.com/embed/videoseries?list=${id}&enablejsapi=1&rel=0&modestbranding=1`
+                : `https://www.youtube.com/embed/${id}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1`;
+            ytFrame.src = ""; 
+            setTimeout(() => { ytFrame.src = src; }, 100);
+        }
+
+        function closeMusicInput() {
+            musicWrapper.classList.remove('locked');
+            inputGroup.classList.remove('active');
+        }
+
+        ytLink.addEventListener('keypress', function(e) { if (e.key === 'Enter') processYouTubeLink(); });
         window.addEventListener('DOMContentLoaded', initializePlayer);
 
         // --- APP NAV LOGIC ---
@@ -730,10 +658,7 @@
             document.getElementById('hub-iframe').srcdoc = '';
         }
 
-        document.addEventListener('DOMContentLoaded', () => { 
-            renderHomeTiles(); 
-            initWeather(); // AGGIUNTO INIT METEO
-        });
+        document.addEventListener('DOMContentLoaded', () => { renderHomeTiles(); initWeather(); });
     </script>
 </body>
 </html>
